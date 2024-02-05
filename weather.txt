@@ -1,0 +1,19 @@
+import requests // commonly used for making HTTP requests.
+
+
+API_KEY = "708faa883ba0aad4bb85dc49b371d8f5"
+BASE_URL = "http://api.openweathermap.org/data/2.5/weather" // base URL for the OpenWeatherMap API.
+
+city = input("Enter a city name: ")
+request_url = f"{BASE_URL}?appid={API_KEY}&q={city}" //full request URL by combining the base URL (BASE_URL), API key (API_KEY), and the user-inputted city name (city).
+response = requests.get(request_url)//HTTP GET request to the constructed URL
+
+if response.status_code == 200:
+    data = response.json()//If the response is successful, it converts the response content to JSON
+    weather = data['weather'][0]['description']
+    temperature = round(data["main"]["temp"] - 273.15, 2)
+
+    print("Weather:", weather)
+    print("Temperature:", temperature, "celsius")//Prints the weather description and temperature in Celsius.
+else:
+    print("An error occurred.")

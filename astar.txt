@@ -1,0 +1,253 @@
+import pygame
+import sys
+import math
+from tkinter import *   // standard GUI (Graphical User Interface) toolkit for Python.
+from tkinter import ttk //provides access to the Tk themed widget set.
+from tkinter import messagebox // allows the display of message boxes.
+import os //provides a way of using operating system-dependent functionality, 
+//such as reading or writing to the file system.
+ 
+
+screen = pygame.display.set_mode((800, 800))//creating display screen
+
+class spot: //to represent spots on a grid
+  def __init__(self, x, y): //the constructor method for the spot class. 
+      self.i = x
+      self.j = y
+      self.f = 0//to represent the total cost of reaching the spot from the start.
+      self.g = 0//to represent the cost of the path from the start to the current spot.
+      self.h = 0//variable representing the estimated cost from the current spot to the goal.
+      self.neighbors = []// This will be used to store neighboring spots.
+      self.previous = None//to store the previous spot in the path
+      self.obs = False//indicating that the spot is not an obstacle.
+      self.closed = False
+      self.value = 1 //cost associated with moving through this spot in the grid.
+
+  def show(self, color, st)://displaying the spot on the Pygame screen.
+      if self.closed == False :
+          pygame.draw.rect(screen, color, (self.i * w, self.j * h, w, h), st)//if the spot is not closed (not visited) before drawing
+          //Draws a rectangle representing the spot on the Pygame screen using the specified color and dimensions
+          pygame.display.update()
+
+  def path(self, color, st)://update to reflect the changes.
+      pygame.draw.rect(screen, color, (self.i * w, self.j * h, w, h), st)
+      pygame.display.update()
+
+  def addNeighbors(self, grid):
+      //adding neighboring spots to the current spot's neighbors list.
+      i = self.i
+      j = self.j
+      if i < cols-1 and grid[self.i + 1][j].obs == False:
+          self.neighbors.append(grid[self.i + 1][j])
+      if i > 0 and grid[self.i - 1][j].obs == False:
+          self.neighbors.append(grid[self.i - 1][j])
+      if j < row-1 and grid[self.i][j + 1].obs == False:
+          self.neighbors.append(grid[self.i][j + 1])
+      if j > 0 and grid[self.i][j - 1].obs == False:
+          self.neighbors.append(grid[self.i][j - 1])
+      //if the conditions are met (within grid bounds and not an obstacle), the neighboring spot is appended to the neighbors list.
+
+
+cols = 50
+grid = [0 for i in range(cols)]
+row = 50
+openSet = []
+closedSet = []//Initialize empty lists to represent the sets of open and closed spots
+red = (255, 0, 0)
+green = (0, 255, 0)
+blue = (0, 0, 255)
+grey = (220, 220, 220)
+w = 800 / cols
+h = 800 / row//calculating the width and height
+cameFrom = [] // to store the path information during the A* algorithm.
+
+# create 2d array
+for i in range(cols):
+  grid[i] = [0 for i in range(row)]
+// initializes each element in the grid list as a new list
+# Create Spots
+for i in range(cols):
+  for j in range(row):
+      grid[i][j] = spot(i, j)
+//The nested loop iterates over each element in grid and initializes it with a spot object, 
+
+# Set start and end node
+start = grid[12][5]
+end = grid[3][6]
+# SHOW RECT
+for i in range(cols):
+  for j in range(row):
+      grid[i][j].show((255, 255, 255), 1)
+//will display rectangles on the Pygame screen.
+
+for i in range(0,row):
+  grid[0][i].show(grey, 0)
+  //for each spot in the first column, display a grey rectangle with a border of thickness 0 
+  grid[0][i].obs = True
+  //setting attribute of each spot in the first column to True, marking them as obstacles.
+  grid[cols-1][i].obs = True
+  grid[cols-1][i].show(grey, 0)//displaying a grey rectangle with a border of thickness 0.
+  // for first row last row 
+  grid[i][row-1].show(grey, 0)
+  grid[i][0].show(grey, 0)
+  grid[i][0].obs = True
+  // setting each spot in the first row to 
+  grid[i][row-1].obs = True
+  // setting each spot in the last row 
+def onsubmit():
+  global start
+  global end
+  // to update these global variables based on user input.
+  st = startBox.get().split(',')//get input from a Tkinter entry box named startBox, splits it by commas
+  ed = endBox.get().split(',')
+  start = grid[int(st[0])][int(st[1])]// setting to the user-input start coordinates.
+  end = grid[int(ed[0])][int(ed[1])]
+  window.quit()//Exits the Tkinter main event loop.
+  window.destroy()//terminates GUI
+
+window = Tk() // Creating a Tkinter window.
+label = Label(window, text='Start(x,y): ')
+startBox = Entry(window)
+label1 = Label(window, text='End(x,y): ')
+endBox = Entry(window)// creating widgets
+var = IntVar() //store integer values for representing the state of a checkbox.
+showPath = ttk.Checkbutton(window, text='Show Steps :', onvalue=1, offvalue=0, variable=var)
+// Creating a checkbox (Checkbutton) labeled 'Show  steps'. 
+submit = Button(window, text='Submit', command=onsubmit)//submit button
+
+showPath.grid(columnspan=2, row=2)//span and position
+submit.grid(columnspan=2, row=3)
+label1.grid(row=1, pady=3)//'End(x,y):' label in the window in the 1st row with some vertical padding.
+endBox.grid(row=1, column=1, pady=3)
+startBox.grid(row=0, column=1, pady=3)
+label.grid(row=0, pady=3)
+
+window.update()// update window to reflect changes made
+mainloop()// allowing the window to respond to user interactions.
+
+pygame.init()
+openSet.append(start)
+
+def mousePress(x):
+  t = x[0]
+  w = x[1]//x and y coordinates from the mouse position tuple.
+  g1 = t // (800 // cols)
+  g2 = w // (800 // row) //calculating grid index
+  acess = grid[g1][g2]
+  if acess != start and acess != end: // checking for neither the start nor the end spot.
+      if acess.obs == False:// checking for not obstacles
+          acess.obs = True//mark as obstacle
+          acess.show((255, 255, 255), 0)// show with white colour no border
+
+end.show((255, 8, 127), 0)
+start.show((255, 8, 127), 0)// diff colour for end and start
+
+loop = True
+while loop:
+  ev = pygame.event.get()
+
+  for event in ev://Iterates over the retrieved events.
+      if event.type == pygame.QUIT://if the user has closed the Pygame window.
+          pygame.quit()
+      if pygame.mouse.get_pressed()[0]: //if the left mouse button is pressed.
+          try:// try to get the mouse
+              pos = pygame.mouse.get_pos()
+              mousePress(pos)
+          except AttributeError:
+              pass
+      elif event.type == pygame.KEYDOWN:
+          if event.key == pygame.K_SPACE:
+              loop = False
+              break
+
+for i in range(cols):
+  for j in range(row):
+      grid[i][j].addNeighbors(grid)//used to identify and store the neighbors of each spot.
+
+def heurisitic(n, e):
+  d = math.sqrt((n.i - e.i)**2 + (n.j - e.j)**2)//Calculates the Euclidean distance between two spots using their grid coordinates.
+  #d = abs(n.i - e.i) + abs(n.j - e.j)//alternative manhattan distance
+  return d
+
+
+def main():
+  end.show((255, 8, 127), 0)
+  start.show((255, 8, 127), 0) //Displays the end and start spots
+  if len(openSet) > 0:
+      lowestIndex = 0
+      for i in range(len(openSet)):
+          if openSet[i].f < openSet[lowestIndex].f:
+              lowestIndex = i
+          // if there are spots in the openSet finds the spot with the lowest f value in the openSet.
+
+      current = openSet[lowestIndex]
+      if current == end:
+          print('done', current.f)
+          start.show((255,8,127),0)
+          temp = current.f
+          for i in range(round(current.f)):
+              current.closed = False
+              current.show((0,0,255), 0)
+              current = current.previous
+          end.show((255, 8, 127), 0)
+          //f the current spot is the end spot, prints 'done' and its f value, then shows the path from start to end by iterating through the previous spots.
+
+          Tk().wm_withdraw()//Creates a hidden Tkinter window.
+          result = messagebox.askokcancel('Program Finished', ('The program finished, the shortest distance \n to the path is ' + str(temp) + ' blocks away, \n would you like to re run the program?'))
+          //The user's response (True for "OK", False for "Cancel") is stored in the result variable.
+          if result == True:
+              os.execl(sys.executable,sys.executable, *sys.argv)
+              ////If the user chooses to rerun, restarts the program using os.execl and exits the current program execution.
+          else:
+              ag = True
+              while ag:
+                  ev = pygame.event.get()
+                  for event in ev:
+                      if event.type == pygame.KEYDOWN:
+                          ag = False
+                          break
+           
+
+If the user chooses not to rerun, waits for a key press to exit the Pygame window.
+          pygame.quit()
+//If the current spot is not the end spot, continues with the A* algorithm.
+
+              
+      openSet.pop(lowestIndex)//Removes the spot with the lowest f value from the openSet. 
+      closedSet.append(current) //Appends the current spot to the closedSet. This indicates that the spot has been fully explored.
+
+      neighbors = current.neighbors
+      for i in range(len(neighbors)):
+          neighbor = neighbors[i]
+          if neighbor not in closedSet:
+          // if the neighbor spot is not in the closedSet. If it is in closedSet, it has already been explored, so we skip it
+              tempG = current.g + current.value //the sum of the current spot's g value and the cost to move from the current spot to the neighbor.
+              if neighbor in openSet:
+                  if neighbor.g > tempG:
+                      neighbor.g = tempG
+              else:
+                  neighbor.g = tempG
+                  openSet.append(neighbor)
+
+          neighbor.h = heurisitic(neighbor, end) //The heuristic is the estimated cost from the neighbor to the goal (end).
+          neighbor.f = neighbor.g + neighbor.h
+
+          if neighbor.previous == None:
+              neighbor.previous = current
+              //If the neighbor has not been assigned a previous spot, sets its previous attribute to the current spot.
+  if var.get():// it checks if the "Show Steps" checkbox is checked.
+      for i in range(len(openSet)):
+          openSet[i].show(green, 0)
+          //show method for each spot in the openSet, displaying the spot.
+      for i in range(len(closedSet)):
+          if closedSet[i] != start://to avoid displaying the start spot as closed.
+              closedSet[i].show(red, 0)
+  current.closed = True
+
+
+while True:
+  ev = pygame.event.poll()
+  if ev.type == pygame.QUIT:
+      pygame.quit()
+  pygame.display.update()
+  main()
